@@ -1,0 +1,372 @@
+/* =========================
+   主题变量（默认浅色）
+   ========================= */
+:root {
+    color-scheme: light dark;
+    /* 让原生控件也随主题 */
+    --bg: #f7f7f9;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #4b5563;
+
+    --primary: #26a69a;
+    /* 品牌主色（按钮、高亮） */
+    --on-primary: #ffffff;
+    /* 主色上的文本颜色 */
+
+    --border: #e5e7eb;
+
+    /* 顶栏/页脚 */
+    --nav-bg: #26a69a;
+    /* 浅色 - 保持原 teal 效果 */
+    --nav-text: #ffffff;
+
+    /* 组件细节 */
+    --chip-bg: #eef2ff;
+    /* 浅蓝灰 */
+    --chip-text: #1f2937;
+
+    --input-bg: #ffffff;
+    --input-text: #111827;
+    --placeholder: #9ca3af;
+
+    --surface-2: #f3f4f6;
+    /* 次级表面（下拉等） */
+}
+
+/* =========================
+   自动跟随系统的暗色变量
+   ========================= */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0b0d10;
+        --card: #0f1318;
+        --text: #e6e7ea;
+        --muted: #a1a1aa;
+
+        --primary: #60a5fa;
+        /* 深色下主色微亮 */
+        --on-primary: #0b0d10;
+
+        --border: #1f2937;
+
+        --nav-bg: #0f1318;
+        /* 顶栏改为暗表面色（更耐看） */
+        --nav-text: #e6e7ea;
+
+        --chip-bg: #1a202c;
+        --chip-text: #e6e7ea;
+
+        --input-bg: #0f1318;
+        --input-text: #e6e7ea;
+        --placeholder: #9aa0a6;
+
+        --surface-2: #11161b;
+    }
+}
+
+/* =========================
+   强制覆盖（手动切换）
+   ========================= */
+[data-theme="light"] {
+    --bg: #f7f7f9;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #4b5563;
+    --primary: #26a69a;
+    --on-primary: #ffffff;
+    --border: #e5e7eb;
+    --nav-bg: #26a69a;
+    --nav-text: #ffffff;
+    --chip-bg: #eef2ff;
+    --chip-text: #1f2937;
+    --input-bg: #ffffff;
+    --input-text: #111827;
+    --placeholder: #9ca3af;
+    --surface-2: #f3f4f6;
+}
+
+[data-theme="dark"] {
+    --bg: #0b0d10;
+    --card: #0f1318;
+    --text: #e6e7ea;
+    --muted: #a1a1aa;
+    --primary: #60a5fa;
+    --on-primary: #0b0d10;
+    --border: #1f2937;
+    --nav-bg: #0f1318;
+    --nav-text: #e6e7ea;
+    --chip-bg: #1a202c;
+    --chip-text: #e6e7ea;
+    --input-bg: #0f1318;
+    --input-text: #e6e7ea;
+    --placeholder: #9aa0a6;
+    --surface-2: #11161b;
+}
+
+/* =========================
+   基础应用与过渡
+   ========================= */
+html,
+body {
+    background: var(--bg) !important;
+    color: var(--text);
+}
+
+/* 轻柔过渡（避免全局 * 影响性能） */
+body,
+nav,
+footer,
+.card,
+.collection,
+.collection .collection-item,
+.modal,
+.modal .modal-content,
+.modal .modal-footer,
+.input-field input,
+.select-dropdown,
+.dropdown-content,
+.chip,
+.pagination a,
+.btn,
+.btn-flat {
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+/* =========================
+   覆盖 Materialize 固定色
+   ========================= */
+
+/* 顶栏与页脚：保留 .teal 类，但颜色由变量接管 */
+nav.teal {
+    background-color: var(--nav-bg) !important;
+    border-bottom: 1px solid var(--border);
+}
+
+nav .brand-logo,
+nav ul a {
+    color: var(--nav-text) !important;
+}
+
+.page-footer.teal {
+    background-color: var(--nav-bg) !important;
+    color: var(--nav-text) !important;
+    border-top: 1px solid var(--border);
+}
+
+.page-footer a {
+    color: var(--nav-text) !important;
+}
+
+/* body 上的灰底工具类改为变量 */
+.grey.lighten-5 {
+    background-color: var(--bg) !important;
+}
+
+/* 文字默认与标题 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text);
+}
+
+a {
+    color: var(--primary);
+}
+
+/* 卡片与列表集合 */
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+}
+
+.collection {
+    border: 1px solid var(--border);
+    background: var(--card);
+}
+
+.collection .collection-item {
+    background: var(--card);
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+}
+
+/* 模态框 */
+.modal {
+    background: transparent;
+}
+
+.modal .modal-content {
+    background: var(--card);
+    color: var(--text);
+}
+
+.modal .modal-footer {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+}
+
+/* 输入与下拉 */
+.input-field input[type="text"],
+.input-field input[type="search"],
+.input-field input[type="number"] {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border-bottom: 1px solid var(--border);
+}
+
+.input-field input::placeholder {
+    color: var(--placeholder);
+}
+
+.input-field label {
+    color: var(--muted);
+}
+
+.input-field input:focus {
+    border-bottom: 1px solid var(--primary) !important;
+    box-shadow: 0 1px 0 0 var(--primary) !important;
+}
+
+.input-field input:focus+label {
+    color: var(--primary) !important;
+}
+
+/* 原生/Materialize 下拉（select 的 UI） */
+.select-dropdown,
+.dropdown-content {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.dropdown-content li>a,
+.dropdown-content li>span {
+    color: var(--text);
+}
+
+/* Chips */
+.chips,
+.chip {
+    background: transparent;
+}
+
+.chip {
+    background: var(--chip-bg);
+    color: var(--chip-text);
+    border: 1px solid var(--border);
+}
+
+/* 分页 */
+.pagination li a {
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+}
+
+.pagination li.active a {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.pagination li.disabled a {
+    color: var(--muted) !important;
+}
+
+/* 按钮（含模式切换） */
+.btn,
+.btn:hover,
+.btn:focus {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+}
+
+.btn-flat {
+    color: var(--primary) !important;
+}
+
+/* =========================
+   你原有的风格与微调
+   ========================= */
+
+/* 强制全局字体 */
+:root,
+*,
+body,
+html {
+    font-family: "Iosevka Web", "Roboto", "Helvetica Neue", sans-serif !important;
+}
+
+/* 轻微卡片悬浮与图片裁切 */
+.card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card .card-image img {
+    object-fit: cover;
+    height: 240px;
+    /* 统一网格高度，避免跳动 */
+}
+
+/* 列表模式的封面头像尺寸 */
+.collection .avatar img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+}
+
+/* 控件组小调整 */
+.btn-group .btn,
+.btn-group .btn-flat {
+    margin-right: 8px;
+}
+
+/* 选中模式的按钮态 */
+.btn.active-mode,
+.btn-flat.active-mode {
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* 标签 chips 容器间距 */
+#tagChips {
+    margin-top: 4px;
+}
+
+/* 模式切换按钮的视觉（使用变量） */
+.mode-toggle .btn {
+    background: transparent !important;
+    color: var(--primary) !important;
+    box-shadow: none;
+}
+
+.mode-toggle .btn.active-mode {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    box-shadow:
+        0 2px 2px 0 rgba(0, 0, 0, .14),
+        0 3px 1px -2px rgba(0, 0, 0, .2),
+        0 1px 5px 0 rgba(0, 0, 0, .12);
+}
+
+/* 两按钮间距 */
+.mode-toggle .btn+.btn {
+    margin-left: 6px;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.controls .input-field,
+.controls .mode-toggle {
+    flex: 1 1 auto;
+    min-width: 120px;
+}

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bangumi 表单生成器 → bangumi.js</title>
+    <link rel="stylesheet" href="assets/fonts/Iosevka.css" />
+    <style>
+        /* 强制全局字体 */
+        :root,
+        *,
+        body,
+        html {
+            font-family: "Iosevka Web", "Roboto", "Helvetica Neue", sans-serif !important;
+        }
+
+        :root {
+            --bg: #f7f7f9;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --muted: #6b7280;
+            --primary: #2563eb;
+            --border: #e5e7eb;
+            --danger: #dc2626;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0b0d10;
+                --card: #0f1318;
+                --text: #e6e7ea;
+                --muted: #a1a1aa;
+                --primary: #60a5fa;
+                --border: #1f2937;
+            }
+        }
+
+        [data-theme="light"] {
+            --bg: #f7f7f9;
+            --card: #fff;
+            --text: #1a1a1a;
+            --muted: #6b7280;
+            --primary: #2563eb;
+            --border: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0b0d10;
+            --card: #0f1318;
+            --text: #e6e7ea;
+            --muted: #a1a1aa;
+            --primary: #60a5fa;
+            --border: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Hiragino Sans GB", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            backdrop-filter: saturate(180%) blur(10px);
+            background: color-mix(in hsl, var(--bg) 90%, transparent);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        h1,
+        h2 {
+            margin: .2rem 0 .8rem;
+        }
+
+        label {
+            font-size: .9rem;
+            color: var(--muted);
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: .7rem .8rem;
+            margin-top: .25rem;
+            margin-bottom: .8rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text);
+        }
+
+        textarea {
+            min-height: 96px;
+            resize: vertical;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .8rem;
+        }
+
+        .btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .6rem;
+        }
+
+        button,
+        .btn {
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            padding: .6rem .9rem;
+            border-radius: 999px;
+            transition: transform .06s ease, background .2s ease;
+        }
+
+        button.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        button.ghost {
+            background: transparent;
+        }
+
+        button.danger {
+            border-color: color-mix(in hsl, var(--danger) 60%, var(--border));
+            color: var(--danger);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        code,
+        pre {
+            background: #0b1220;
+            color: #e6edf3;
+            border-radius: 12px;
+            padding: .8rem;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+        }
+
+        .preview {
+            height: 420px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: .8rem;
+            background: #0b1220;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+            max-height: 220px;
+            overflow: auto;
+        }
+
+        .item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: .6rem .8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .6rem;
+            background: color-mix(in hsl, var(--card) 96%, transparent);
+        }
+
+        .item small {
+            color: var(--muted);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .theme-toggle {
+            margin-left: auto;
+        }
+
+        .file {
+            display: none;
+        }
+
+        .hint {
+            font-size: .85rem;
+            color: var(--muted);
+            margin-top: -.5rem;
+            margin-bottom: .8rem;
+        }
+
+        footer {
+            opacity: .7;
+            font-size: .85rem;
+            padding: 1rem 0;
+        }
+
+        @media (max-width: 980px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container toolbar">
+            <h1>Bangumi 表单生成器</h1>
+            <span class="muted">把表单数据一键导出为 <code>bangumi.js</code> / <code>json</code></span>
+            <button id="themeBtn" class="btn theme-toggle">切换主题</button>
+            <button class="btn" id="backBtn">返回到主页</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="row">
+            <!-- 左侧：表单 -->
+            <section class="card">
+                <h2>新增 / 编辑条目</h2>
+                <form id="bangumiForm">
+                    <div class="grid-2">
+                        <div>
+                            <label for="id">ID（唯一）</label>
+                            <input id="id" name="id" placeholder="如：kny" required />
+                        </div>
+                        <div>
+                            <label for="status">状态</label>
+                            <select id="status" name="status" required>
+                                <option value="planned">planned</option>
+                                <option value="watching">watching</option>
+                                <option value="finished">finished</option>
+                                <option value="dropped">dropped</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label for="mainTitle">日文原名 mainTitle</label>
+                    <input id="mainTitle" name="mainTitle" placeholder="鬼滅の刃" required />
+
+                    <label for="otherTitle">其他标题 otherTitle（逗号分隔 → 自动转数组）</label>
+                    <input id="otherTitle" name="otherTitle" placeholder="鬼灭之刃, Kimetsu no Yaiba, Demon Slayer" />
+
+                    <div class="grid-2">
+                        <div>
+                            <label for="year">年份 year（数字）</label>
+                            <input id="year" name="year" type="number" inputmode="numeric" placeholder="2019" min="1900"
+                                max="2100" required />
+                        </div>
+                        <div>
+                            <label for="episodes">话数 episodes（数字）</label>
+                            <input id="episodes" name="episodes" type="number" inputmode="numeric" placeholder="26"
+                                min="0" required />
+                        </div>
+                    </div>
+
+                    <label for="rating">评分 rating（0–10）</label>
+                    <input id="rating" name="rating" type="number" step="0.1" min="0" max="10" placeholder="8.7" />
+
+                    <label for="tags">标签 tags（逗号分隔 → 自动转数组）</label>
+                    <input id="tags" name="tags" placeholder="热血, 奇幻, 战斗" />
+
+                    <label for="cover">海报 URL / 相对路径 cover</label>
+                    <input id="cover" name="cover" placeholder="assets/posters/kny.jpg 或 https://..." />
+
+                    <label for="desc">简介 desc</label>
+                    <textarea id="desc" name="desc" placeholder="简要介绍……"></textarea>
+
+                    <div class="btns">
+                        <button type="submit" class="primary">保存到列表</button>
+                        <button type="button" id="resetForm" class="ghost">清空表单</button>
+                    </div>
+                    <p class="hint" style="margin-top: 15px;">提示：编辑已有项时，先在右侧列表点“编辑”，表单将自动填充；保存后覆盖同 ID 项。</p>
+                </form>
+            </section>
+
+            <!-- 右侧：列表 / 预览 / 导入导出 -->
+            <section class="card">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:.6rem;">
+                    <h2>数据列表</h2>
+                    <div class="btns">
+                        <input id="fileInput" class="file" type="file" accept=".js,.json" />
+                        <button id="importBtn" class="ghost">导入 JS/JSON</button>
+                        <button id="downloadJS" class="primary">下载为 JS</button>
+                        <button id="downloadJSON" class="ghost">下载为 JSON</button>
+                        <button id="clearAll" class="danger">清空全部</button>
+                    </div>
+                </div>
+
+                <div id="list" class="list" aria-live="polite"></div>
+
+                <h2>JS 预览（只读）</h2>
+                <div class="preview">
+                    <pre id="jsPreview"></pre>
+                </div>
+            </section>
+        </div>
+
+        <footer class="right muted">
+            遵循数据结构：
+            <code>{ id, mainTitle, otherTitle[], year, episodes, rating, tags[], cover, status, desc }</code>
+        </footer>
+    </main>
+
+    <script>
+        // backBtn
+        const backBtn = document.getElementById("backBtn");
+        backBtn.addEventListener("click", () => {
+            window.location.href = "index.html";
+        });
+
+        // ========== 小工具函数 ==========
+        /** 将 "a, b, c" → ["a","b","c"]；去空格与空项 */
+        function splitToArray(s) {
+            if (!s) return [];
+            return s.split(",").map(x => x.trim()).filter(Boolean);
+        }
+        /** 下载文本文件 */
+        function download(filename, text) {
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+        /** 尝试从 JS/JSON 文本提取 BANGUMI_DATA 数组 */
+        function extractDataFromText(text) {
+            // 1) 优先尝试 JSON.parse
+            try {
+                const parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) return parsed;
+                if (parsed && Array.isArray(parsed.BANGUMI_DATA)) return parsed.BANGUMI_DATA;
+            } catch { }
+            // 2) 用正则从 JS 里取出 const BANGUMI_DATA = [ ... ];
+            const m = text.match(/BANGUMI_DATA\s*=\s*(\[[\s\S]*\]);?/);
+            if (m) {
+                try { return JSON.parse(m[1].replace(/(\w+):/g, '"$1":')); } catch { }
+                // 如果上面失败，再用 eval（尽量避免，但纯本地可用）
+                try { return (0, eval)("(" + m[1] + ")"); } catch { }
+            }
+            return null;
+        }
+        /** 简单数据校验与清洗 */
+        function normalizeItem(item) {
+            const out = {
+                id: String(item.id || "").trim(),
+                mainTitle: String(item.mainTitle || "").trim(),
+                otherTitle: Array.isArray(item.otherTitle) ? item.otherTitle : splitToArray(item.otherTitle),
+                year: Number(item.year ?? 0),
+                episodes: Number(item.episodes ?? 0),
+                rating: (item.rating === "" || item.rating === null || item.rating === undefined) ? null : Number(item.rating),
+                tags: Array.isArray(item.tags) ? item.tags : splitToArray(item.tags),
+                cover: String(item.cover || "").trim(),
+                status: String(item.status || "planned").trim(),
+                desc: String(item.desc || "").trim(),
+            };
+            if (!out.id) throw new Error("ID 不能为空");
+            if (!out.mainTitle) throw new Error("mainTitle 不能为空");
+            if (!(out.year >= 1900 && out.year <= 2100)) throw new Error("year 必须在 1900–2100 之间");
+            if (!(out.episodes >= 0)) throw new Error("episodes 必须为非负数字");
+            if (out.rating !== null && !(out.rating >= 0 && out.rating <= 10)) throw new Error("rating 必须在 0–10 之间");
+            return out;
+        }
+
+        // ========== 应用状态 ==========
+        const state = {
+            items: /** @type {Array<any>} */ ([]),
+            editingId: null, // 当前正在编辑的 id
+        };
+
+        // 从 localStorage 恢复
+        try {
+            const saved = localStorage.getItem("bangumi_data_v1");
+            if (saved) state.items = JSON.parse(saved) || [];
+        } catch { }
+
+        // ========== DOM ==========
+        const form = document.getElementById("bangumiForm");
+        const listEl = document.getElementById("list");
+        const jsPreviewEl = document.getElementById("jsPreview");
+        const resetBtn = document.getElementById("resetForm");
+        const clearAllBtn = document.getElementById("clearAll");
+        const downloadJSBtn = document.getElementById("downloadJS");
+        const downloadJSONBtn = document.getElementById("downloadJSON");
+        const importBtn = document.getElementById("importBtn");
+        const fileInput = document.getElementById("fileInput");
+        const themeBtn = document.getElementById("themeBtn");
+
+        // ========== 渲染 ==========
+        function renderList() {
+            listEl.innerHTML = "";
+            if (state.items.length === 0) {
+                const div = document.createElement("div");
+                div.className = "item";
+                div.innerHTML = `<span class="muted">还没有数据，先在左边填写一条吧～</span>`;
+                listEl.appendChild(div);
+                renderPreview();
+                return;
+            }
+            for (const item of state.items) {
+                const div = document.createElement("div");
+                div.className = "item";
+                const title = item.otherTitle && item.otherTitle[0] ? `${item.otherTitle[0]} / ` : "";
+                div.innerHTML = `
+          <div>
+            <strong>${item.mainTitle}</strong>
+            <small>（${title}${item.year} · ${item.episodes} 话 · ${item.status}）</small>
+          </div>
+          <div class="btns">
+            <button data-edit="${item.id}" class="ghost">编辑</button>
+            <button data-dup="${item.id}" class="ghost">复制</button>
+            <button data-del="${item.id}" class="danger">删除</button>
+          </div>
+        `;
+                listEl.appendChild(div);
+            }
+            renderPreview();
+        }
+
+        function renderPreview() {
+            // 生成标准 JS 文本（字段名保持原样，不加引号；字符串用双引号；rating 若为 null 则省略该字段）
+            const lines = [];
+            lines.push("// 由生成器自动导出；请保持字段名一致");
+            lines.push("const BANGUMI_DATA = [");
+            state.items.forEach((it, idx) => {
+                const parts = [];
+                parts.push(`id: "${escapeString(it.id)}"`);
+                parts.push(`mainTitle: "${escapeString(it.mainTitle)}"`);
+                parts.push(`otherTitle: ${JSON.stringify(it.otherTitle || [], null, 0)}`);
+                parts.push(`year: ${Number(it.year)}`);
+                parts.push(`episodes: ${Number(it.episodes)}`);
+                if (it.rating !== null && it.rating !== undefined && it.rating !== "") {
+                    parts.push(`rating: ${Number(it.rating)}`);
+                }
+                parts.push(`tags: ${JSON.stringify(it.tags || [], null, 0)}`);
+                parts.push(`cover: "${escapeString(it.cover || "")}"`);
+                parts.push(`status: "${escapeString(it.status || "planned")}"`);
+                parts.push(`desc: "${escapeString(it.desc || "")}"`);
+                const comma = (idx === state.items.length - 1) ? "" : ",";
+                lines.push("  {\n    " + parts.join(",\n    ") + "\n  }" + comma);
+            });
+            lines.push("];");
+
+            jsPreviewEl.textContent = lines.join("\n");
+
+            // 保存本地
+            try { localStorage.setItem("bangumi_data_v1", JSON.stringify(state.items)); } catch { }
+        }
+
+        function escapeString(s) {
+            return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+        }
+
+        // ========== 事件 ==========
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const fd = new FormData(form);
+            const raw = Object.fromEntries(fd.entries());
+            const item = normalizeItem(raw);
+
+            // rating 允许为空：表单空串 → null
+            if (raw.rating === "") item.rating = null;
+
+            // 覆盖同 ID 或新增
+            const i = state.items.findIndex(x => x.id === item.id);
+            if (i >= 0 && state.editingId && state.editingId === item.id) {
+                state.items[i] = item; // 正在编辑 → 覆盖
+            } else if (i >= 0 && !state.editingId) {
+                // 未进入编辑模式但 ID 重复 → 覆盖（也可改成报错，看你需求）
+                state.items[i] = item;
+            } else {
+                state.items.push(item);
+            }
+            state.editingId = null;
+            form.reset();
+            renderList();
+        });
+
+        resetBtn.addEventListener("click", () => {
+            state.editingId = null;
+            form.reset();
+        });
+
+        listEl.addEventListener("click", (e) => {
+            const t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+            const id = t.getAttribute("data-edit") || t.getAttribute("data-del") || t.getAttribute("data-dup");
+            if (!id) return;
+            const item = state.items.find(x => x.id === id);
+            if (!item) return;
+
+            if (t.hasAttribute("data-edit")) {
+                // 填充表单进入编辑
+                state.editingId = id;
+                form.id.value = item.id;
+                form.status.value = item.status;
+                form.mainTitle.value = item.mainTitle;
+                form.otherTitle.value = (item.otherTitle || []).join(", ");
+                form.year.value = item.year;
+                form.episodes.value = item.episodes;
+                form.rating.value = (item.rating ?? "") === null ? "" : (item.rating ?? "");
+                form.tags.value = (item.tags || []).join(", ");
+                form.cover.value = item.cover || "";
+                form.desc.value = item.desc || "";
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            } else if (t.hasAttribute("data-del")) {
+                if (confirm(`确定删除：${item.mainTitle} (${id}) ？`)) {
+                    state.items = state.items.filter(x => x.id !== id);
+                    if (state.editingId === id) { state.editingId = null; form.reset(); }
+                    renderList();
+                }
+            } else if (t.hasAttribute("data-dup")) {
+                // 复制成新项：id 后缀 -copy
+                const copy = structuredClone(item);
+                copy.id = uniqueId(copy.id);
+                state.items.push(copy);
+                renderList();
+            }
+        });
+
+        function uniqueId(base) {
+            let n = 1, id = `${base}-copy`;
+            while (state.items.some(x => x.id === id)) { n++; id = `${base}-copy${n}`; }
+            return id;
+        }
+
+        clearAllBtn.addEventListener("click", () => {
+            if (!confirm("清空全部数据？该操作不可撤销")) return;
+            state.items = [];
+            state.editingId = null;
+            form.reset();
+            renderList();
+        });
+
+        downloadJSBtn.addEventListener("click", () => {
+            let text = jsPreviewEl.textContent;
+
+            // 保存时添加信息
+            let infoBeforeJS = `// 本文件由 Bangumi Gallery 自动生成
+// By Rinkio-Lab | Bangumi Gallery Form Builder | Version 1.0
+
+/**
+ * 字段说明：
+ * - id: 唯一 ID
+ * - mainTitle: 日文原名
+ * - otherTitle: 中文译名 / 英文名
+ * - year: 年份（数字）
+ * - episodes: 话数（数字）
+ * - rating: 评分（0-10）
+ * - tags: 标签数组（字符串）
+ * - cover: 相对路径到海报
+ * - status: "watching" | "planned" | "finished" 等
+ * - desc: 简介
+*/`;
+
+            text = infoBeforeJS + "\n\n" + text;
+            download("bangumi.generated.js", text);
+        });
+
+        downloadJSONBtn.addEventListener("click", () => {
+            const json = JSON.stringify(state.items, null, 2);
+            download("bangumi.generated.json", json);
+        });
+
+        importBtn.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", async () => {
+            const file = fileInput.files?.[0];
+            if (!file) return;
+            const text = await file.text();
+            const data = extractDataFromText(text);
+            if (!data || !Array.isArray(data)) {
+                alert("未能从文件中解析到 BANGUMI_DATA 数组或 JSON 数组");
+                return;
+            }
+            try {
+                const items = data.map(normalizeItem);
+                // 合并：同 id 覆盖
+                const map = new Map(state.items.map(x => [x.id, x]));
+                for (const it of items) map.set(it.id, it);
+                state.items = Array.from(map.values());
+                renderList();
+                alert(`已导入 ${items.length} 条`);
+            } catch (err) {
+                alert("数据格式不合法：" + (err?.message || err));
+            } finally {
+                fileInput.value = "";
+            }
+        });
+
+        // ========== 主题 ==========
+        // 跟随系统 + 手动覆盖（data-theme）
+        const THEME_KEY = "bangumi_theme_v1";
+        function applyTheme(theme) {
+            if (theme === "light" || theme === "dark") {
+                document.documentElement.setAttribute("data-theme", theme);
+            } else {
+                document.documentElement.removeAttribute("data-theme");
+            }
+            themeBtn.textContent = theme === "dark" ? "切换主题（当前：暗）" :
+                theme === "light" ? "切换主题（当前：亮）" :
+                    "切换主题（当前：跟随系统）";
+            localStorage.setItem(THEME_KEY, theme || "");
+        }
+        themeBtn.addEventListener("click", () => {
+            const cur = document.documentElement.getAttribute("data-theme"); // 可能为 null
+            if (!cur) applyTheme("dark");
+            else if (cur === "dark") applyTheme("light");
+            else applyTheme(null); // 回到跟随系统
+        });
+        // 初始主题
+        (function initTheme() {
+            const saved = localStorage.getItem(THEME_KEY) || "";
+            applyTheme(saved || null);
+        })();
+
+        // 初次渲染（如果本地没有数据，放一条演示）
+        if (state.items.length === 0) {
+            state.items = [{
+                id: "kny",
+                mainTitle: "鬼滅の刃",
+                otherTitle: ["鬼灭之刃", "Kimetsu no Yaiba", "Demon Slayer"],
+                year: 2019,
+                episodes: 26,
+                rating: 8.7,
+                tags: ["热血", "奇幻", "战斗"],
+                cover: "https://moegirl.uk/images/1/18/%E9%AC%BC%E7%81%AD%E4%B9%8B%E5%88%8323.jpg",
+                status: "finished",
+                desc: "灶门炭治郎为治愈鬼化的妹妹祢豆子而踏上的历练之旅。"
+            }];
+        }
+        renderList();
+    </script>
+</body>
+
+</html>
