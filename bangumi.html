@@ -178,12 +178,48 @@
         }
 
         .preview {
-            height: 420px;
-            overflow: auto;
+            background: #0b1220;
             border: 1px solid var(--border);
             border-radius: 12px;
+            padding: 0;
+            max-width: 60vw !important;
+            height: 420px;
+            overflow: auto;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        #jsPreview {
+            margin: 0;
             padding: .8rem;
-            background: #0b1220;
+            white-space: pre-wrap;
+            /* 保留缩进 + 自动换行 */
+            word-break: break-all;
+            /* 长单词 / 连续字符串也能折行 */
+            overflow-wrap: anywhere;
+            /* 遇到超长词也能断开 */
+            counter-reset: lineno;
+        }
+
+        #jsPreview span {
+            display: block;
+            counter-increment: lineno;
+            /* 每行加 1 */
+        }
+
+        #jsPreview span::before {
+            content: counter(lineno);
+            display: inline-block;
+            width: 3ch;
+            /* 行号宽度 */
+            margin-right: 1em;
+            color: #6b7280;
+            /* 灰色行号 */
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid var(--border);
+            padding-right: .6em;
         }
 
         .list {
@@ -268,6 +304,51 @@
             <section class="card">
                 <h2>新增 / 编辑条目</h2>
                 <form id="bangumiForm">
+                    <!-- 导入 Python 输出 JS 并自动填表 -->
+                    <div style="margin:1rem 0; padding:.6rem; border-radius:8px;">
+                        <label>粘贴 Python 输出段（含 const BANGUMI_DATA = [...]）：</label>
+                        <textarea id="pasteJs" rows="6" style="width:100%; font-family:monospace;"></textarea>
+                        <div style="margin-top:0.5rem;">
+                            <button id="pasteBtn" class="btn primary">导入并填表</button>
+                            <button id="clearBtn" class="btn ghost">清空</button>
+                            <button type="submit" class="primary">保存到列表</button>
+                        </div>
+                    </div>
+
+                    <script>
+                        (function () {
+                            document.getElementById("pasteBtn").onclick = () => {
+                                const txt = document.getElementById("pasteJs").value.trim();
+                                if (!txt) { alert("请输入粘贴内容！"); return; }
+                                try {
+                                    const arr = (new Function('"use strict";return (' +
+                                        (txt.match(/BANGUMI_DATA\s*=\s*(\[[\s\S]*\])/)
+                                            ? txt.match(/BANGUMI_DATA\s*=\s*(\[[\s\S]*\])/)[1]
+                                            : txt) + ')'))();
+                                    const obj = Array.isArray(arr) ? arr[0] : arr;
+                                    ["id", "mainTitle", "otherTitle", "year", "episodes", "rating", "tags", "cover", "desc"].forEach(key => {
+                                        const el = document.getElementById(key);
+                                        if (!el) return;
+                                        const val = obj[key];
+                                        if (key === "otherTitle" || key === "tags") {
+                                            el.value = Array.isArray(val) ? val.join(", ") : val || "";
+                                        } else {
+                                            el.value = (val === null || val === undefined) ? "" : val;
+                                        }
+                                    });
+                                    // alert("表单已填充！请检查 → 保存");
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                } catch (e) {
+                                    console.error(e);
+                                    alert("解析错误，请确保粘贴内容正确");
+                                }
+                            };
+                            document.getElementById("clearBtn").onclick = () => {
+                                document.getElementById("pasteJs").value = "";
+                            };
+                        })();
+                    </script>
+
                     <div class="grid-2">
                         <div>
                             <label for="id">ID（唯一）</label>
@@ -298,8 +379,8 @@
                         </div>
                         <div>
                             <label for="episodes">话数 episodes（数字）</label>
-                            <input id="episodes" name="episodes" type="number" inputmode="numeric" placeholder="26"
-                                min="0" required />
+                            <input id="episodes" name="episodes" type="number" inputmode="numeric" placeholder="26" min="0"
+                                required />
                         </div>
                     </div>
 
@@ -342,6 +423,7 @@
                 <div class="preview">
                     <pre id="jsPreview"></pre>
                 </div>
+
             </section>
         </div>
 
@@ -467,7 +549,6 @@
         }
 
         function renderPreview() {
-            // 生成标准 JS 文本（字段名保持原样，不加引号；字符串用双引号；rating 若为 null 则省略该字段）
             const lines = [];
             lines.push("// 由生成器自动导出；请保持字段名一致");
             lines.push("const BANGUMI_DATA = [");
@@ -490,7 +571,11 @@
             });
             lines.push("];");
 
-            jsPreviewEl.textContent = lines.join("\n");
+            const code = lines.join("\n");
+
+            // 包裹每一行到 <span>
+            document.getElementById("jsPreview").innerHTML =
+                code.split("\n").map(line => `<span>${line || " "}</span>`).join("");
 
             // 保存本地
             try { localStorage.setItem("bangumi_data_v1", JSON.stringify(state.items)); } catch { }

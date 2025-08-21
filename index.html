@@ -68,11 +68,9 @@
                 </li>
                 <li>
                     <a href="https://materializecss.com/getting-started.html" target="_blank" rel="noopener">
-                        <i class="material-icons left">open_in_new</i>Materialize 文档
+                        <i class="material-icons left">open_in_new</i><span
+                            style="font-size: smaller;">Materialize</span> 文档
                     </a>
-                </li>
-                <li>
-                    <a href="bangumi.html"><i class="material-icons left">edit</i>番组表单生成器</a>
                 </li>
                 <li>
                     <a href="#about"><i class="material-icons left">info_outline</i>关于</a>
@@ -86,10 +84,13 @@
         <div class="container">
             <div class="row">
                 <div class="controls">
+                    <div class="col s6 m3 l2">
+                        <a href="bangumi.html"><i class="material-icons left">edit</i>番组表单<br>生成器</a>
+                    </div>
                     <!-- 搜索 -->
                     <div class="input-field col s12 m6 l4">
                         <i class="material-icons prefix">search</i>
-                        <input id="searchInput" type="text" placeholder="搜索：标题 / 别名 / 标签" />
+                        <input id="searchInput" type="text" placeholder="搜索：标题 / 别名" />
                     </div>
 
                     <!-- 排序 -->
@@ -111,6 +112,11 @@
                         <label>排序方向</label>
                     </div>
 
+                    <!-- 标签筛选（动态渲染） -->
+                    <div class="input-field col s6 m3 l2">
+                        <div id="tagChips" class="chips chips-placeholder"></div>
+                    </div>
+
                     <!-- 模式切换 -->
                     <div class="col s12 m6 l4 right-align">
                         <div class="btn-group mode-toggle right">
@@ -122,13 +128,6 @@
                             </a>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- 标签筛选（动态渲染） -->
-            <div class="row">
-                <div class="col s12">
-                    <div id="tagChips" class="chips chips-placeholder"></div>
                 </div>
             </div>
         </div>
@@ -154,7 +153,7 @@
             <div class="row">
                 <div class="col s12 m8">
                     <h5 class="white-text">关于本页 / <a class="grey-text text-lighten-4"
-                        href="https://github.com/Rinkio-Lab/Bangumi-Gallery" target="_blank">GitHub</a></h5>
+                            href="https://github.com/Rinkio-Lab/Bangumi-Gallery" target="_blank">GitHub</a></h5>
                     <p class="grey-text text-lighten-4">
                         由 Rinkio-Lab 制作，使用 Materialize 栅格（12
                         列）、卡片（cards）与集合（collections）实现番剧网格/列表视图，
@@ -206,15 +205,16 @@
 
         function updateThemeBtn() {
             const theme = currentTheme();
+            themeLabel.textContent = "黑暗模式";
             // 文案与图标联动
             if (theme === "dark") {
-                themeLabel.textContent = "切换主题（当前：暗）";
+                // themeLabel.textContent = "切换主题（当前：暗）";
                 themeIcon.textContent = "dark_mode"; // 🌙
             } else if (theme === "light") {
-                themeLabel.textContent = "切换主题（当前：亮）";
+                // themeLabel.textContent = "切换主题（当前：亮）";
                 themeIcon.textContent = "light_mode"; // ☀️
             } else {
-                themeLabel.textContent = "切换主题（当前：跟随系统）";
+                // themeLabel.textContent = "切换主题（当前：跟随系统）";
                 themeIcon.textContent = "brightness_6"; // 自动
             }
         }

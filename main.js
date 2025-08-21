@@ -69,7 +69,7 @@ function renderGrid(list, mount) {
           <img class="activator responsive-img" src="${item.cover}" alt="${item.mainTitle}">
         </div>
         <div class="card-content">
-          <span class="card-title activator grey-text text-darken-4" title="">
+          <span class="card-title activator grey-text" title="">
             ${item.mainTitle}
             <i class="material-icons right">more_vert</i>
           </span>
@@ -82,7 +82,7 @@ function renderGrid(list, mount) {
           </div>
         </div>
         <div class="card-reveal">
-          <span class="card-title grey-text text-darken-4">
+          <span class="card-title grey-text">
             ${item.mainTitle}
             <i class="material-icons right">close</i>
           </span>
