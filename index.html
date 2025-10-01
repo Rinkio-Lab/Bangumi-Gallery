@@ -139,13 +139,13 @@
     </main>
 
     <!-- 分页 -->
-    <div class="section">
-        <div class="container center">
-            <ul id="pagination" class="pagination">
-                <!-- JS 渲染分页项；结构与样式参照 Materialize 分页组件 -->
-            </ul>
-        </div>
-    </div>
+<!--
+<div class="section">
+  <div class="container center">
+    <ul id="pagination" class="pagination"></ul>
+  </div>
+</div>
+-->
 
     <!-- 关于 -->
     <footer id="about" class="page-footer teal">
@@ -155,9 +155,8 @@
                     <h5 class="white-text">关于本页 / <a class="grey-text text-lighten-4"
                             href="https://github.com/Rinkio-Lab/Bangumi-Gallery" target="_blank">GitHub</a></h5>
                     <p class="grey-text text-lighten-4">
-                        由 Rinkio-Lab 制作，使用 Materialize 栅格（12
-                        列）、卡片（cards）与集合（collections）实现番剧网格/列表视图，
-                        支持搜索、排序、标签筛选与分页。图标来自 Google Material Icons。
+                        由 Rinkio-Lab 制作，使用 Materialize 栅格（12 列）、卡片（cards）与集合（collections）实现番剧瀑布流/网格/列表视图，
+                        支持搜索、排序、标签筛选与无限滚动。图标来自 Google Material Icons。
                     </p>
                 </div>
             </div>
@@ -172,6 +171,7 @@
     </footer>
 
     <!-- JS -->
+    <script src="assets/masonry.pkgd.min.js"></script>
     <script src="assets/materialize.min.js"></script>
 
     <!-- 数据 -->

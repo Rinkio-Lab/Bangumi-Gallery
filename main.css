@@ -370,3 +370,40 @@ html {
     flex: 1 1 auto;
     min-width: 120px;
 }
+
+/* Masonry 用 flex 布局，不需要 float */
+.grid .col {
+  float: none !important;
+  margin-left: 0 !important;
+}
+
+/* 让容器居中（fitWidth 生效） */
+main.container {
+  display: flex;
+  justify-content: center;
+}
+
+/* 译名折叠组件 */
+.alias-wrapper {
+  position: relative;
+  overflow: hidden;
+  max-height: calc(1.2em * 2);      /* 默认最多显示 2 行 */
+  transition: max-height .25s ease;
+  cursor: pointer;
+}
+.alias-wrapper.expanded {
+  max-height: none;
+}
+.alias-wrapper::after {              /* 渐变遮罩，提示更多 */
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 3em;
+  height: 1.2em;
+  background: linear-gradient(to right, transparent, var(--card) 60%);
+  pointer-events: none;
+}
+.alias-wrapper.expanded::after {
+  display: none;
+}

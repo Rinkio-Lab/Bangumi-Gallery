@@ -1,5 +1,5 @@
 // === 可调参数 ===
-const PAGE_SIZE = 12;
+const PAGE_SIZE = Infinity;   // 或者 Number.MAX_SAFE_INTEGER
 
 // === 状态管理 ===
 let state = {
@@ -55,15 +55,47 @@ function getFilteredSortedData() {
     }).sort((a, b) => compare(a, b, state.sortField, state.sortOrder));
 }
 
-// 渲染网格模式（cards）
-function renderGrid(list, mount) {
-    const row = document.createElement("div");
-    row.className = "row";
+/* 展开/折叠后通知 Masonry 重新布局 + 可选平滑滚动 */
+let scrollQueued = false;
+function toggleAlias(wrapper) {
+  wrapper.classList.toggle('expanded');
+  const grid = wrapper.closest('.grid');
+  if (grid?.masonry) grid.masonry.layout();
 
-    list.forEach(item => {
-        const col = document.createElement("div");
-        col.className = "col s12 m6 l3";
-        col.innerHTML = `
+  if (scrollQueued) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => {
+    const card = wrapper.closest('.card'); // 获取卡片元素
+    const top = card.getBoundingClientRect().top + window.pageYOffset - 8;
+    window.scrollTo({ top, behavior: 'smooth' });
+    scrollQueued = false;
+  });
+}
+
+// 工具函数：生成折叠译名
+function foldAlias(otherTitle = []) {
+  const text = otherTitle.join(' / ');
+  if (!text) return '';
+  return `
+    <div class="alias-wrapper" onclick="toggleAlias(this)">
+      ${text}
+    </div>`;
+}
+
+// 渲染网格模式（瀑布流，使用 Masonry.js）
+function renderGrid(list, mount) {
+  // 1. 创建容器，保留 Materialize 响应式 class，同时加上 Masonry 需要的 grid
+  const row = document.createElement('div');
+  row.className = 'row grid';
+  row.style.margin = '0';          // 去掉 Materialize 负 margin，避免偏移
+
+  // 2. 逐个生成卡片
+  list.forEach(item => {
+    const col = document.createElement('div');
+    // 保留响应式断点 + 加 grid-item（Masonry 识别用）
+    col.className = 'col s12 m6 l3 grid-item';
+
+    col.innerHTML = `
       <div class="card hoverable">
         <div class="card-image waves-effect waves-block waves-light">
           <img class="activator responsive-img" src="${item.cover}" alt="${item.mainTitle}">
@@ -74,11 +106,11 @@ function renderGrid(list, mount) {
             <i class="material-icons right">more_vert</i>
           </span>
           <p class="grey-text" style="font-size: 0.9em; margin-bottom:6px;">
-            ${(item.otherTitle || []).join(" / ")}
+            ${foldAlias(item.otherTitle)}
           </p>
           <p class="grey-text">${item.year} · ${item.episodes} 话 · ⭐ ${item.rating}</p>
           <div class="chips" style="margin-top:6px;">
-            ${(item.tags || []).slice(0, 3).map(t => `<div class="chip">${t}</div>`).join("")}
+            ${(item.tags || []).slice(0, 3).map(t => `<div class="chip">${t}</div>`).join('')}
           </div>
         </div>
         <div class="card-reveal">
@@ -86,15 +118,31 @@ function renderGrid(list, mount) {
             ${item.mainTitle}
             <i class="material-icons right">close</i>
           </span>
-          <p class="grey-text">${item.desc || ""}</p>
-          <p class="grey-text">状态：${item.status || "—"}</p>
+          <p class="grey-text">${item.desc || ''}</p>
+          <p class="grey-text">状态：${item.status || '—'}</p>
         </div>
       </div>
     `;
-        row.appendChild(col);
-    });
+    row.appendChild(col);
+  });
 
-    mount.appendChild(row);
+  mount.appendChild(row);
+
+  // 3. 初始化 Masonry 瀑布流
+  // eslint-disable-next-line no-undef
+  const msnry = new Masonry(row, {
+    itemSelector: '.grid-item',
+    gutter: 16,          // 列间距（px）
+    fitWidth: true,      // 容器宽度自适应
+    transitionDuration: '0.2s'
+  });
+
+  row._masonry = msnry;
+
+  // 4. 图片加载完后重新布局（防止图片未加载完导致错位）
+  row.addEventListener('load', (e) => {
+    if (e.target.tagName === 'IMG') msnry.layout();
+  }, true);
 }
 
 // 渲染列表模式（collections）
@@ -109,7 +157,7 @@ function renderList(list, mount) {
       <img src="${item.cover}" alt="${item.mainTitle}" class="circle">
       <span class="title"><strong>${item.mainTitle}</strong></span>
       <p style="font-size:0.9em;">
-        ${(item.otherTitle || []).join(" / ")}
+        ${foldAlias(item.otherTitle)}
       </p>
       <p class="grey-text">
         ${item.year} · ${item.episodes} 话 · ⭐ ${item.rating}
@@ -173,29 +221,23 @@ function renderPagination(total, pageSize, current, onGoto) {
     pag.appendChild(mkLi("下一页", Math.min(pages, current + 1), current === pages, false, "chevron_right"));
 }
 
-// 渲染主流程
+// 主渲染：一次性输出全部卡片（无分页）
 function render() {
-    const mount = $("#contentArea");
-    mount.innerHTML = "";
+  const mount = $('#contentArea');
+  mount.innerHTML = '';
 
-    const list = getFilteredSortedData();
-    const total = list.length;
-    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    if (state.page > pages) state.page = pages;
+  // 获取过滤+排序后的完整数据
+  const list = getFilteredSortedData();
 
-    const start = (state.page - 1) * PAGE_SIZE;
-    const pageData = list.slice(start, start + PAGE_SIZE);
+  // 整批渲染
+  if (state.mode === 'grid') {
+    renderGrid(list, mount);
+  } else {
+    renderList(list, mount);
+  }
 
-    if (state.mode === "grid") {
-        renderGrid(pageData, mount);
-    } else {
-        renderList(pageData, mount);
-    }
-
-    renderPagination(total, PAGE_SIZE, state.page, p => {
-        state.page = p;
-        render();
-    });
+  // 清空分页控件
+  // $('#pagination').innerHTML = '';
 }
 
 // 初始化控件与事件
