@@ -172,18 +172,19 @@ def to_js_snippet(obj: Dict) -> str:
     return "// 由 bangumi_importer.py 生成\nconst BANGUMI_DATA = " + json_str + ";"
 
 
-def main():
+def main() -> bool:
     # 1. 输入关键词
     keyword = questionary.text("请输入搜索关键词（Bangumi 名称）:").ask()
     if not keyword:
         print("未输入关键词，退出。")
-        return
+        return False
 
     # 2. 搜索结果选择
     results = search_subject(keyword)
     if not results:
         print("未找到任何结果。")
-        return
+        return False
+
     choices = [f"{r['title']} ({r['subtitle']}) [ID:{r['id']}]" for r in results]
     selected = questionary.select("请选择要导入的作品:", choices=choices).ask()
     # 提取 ID
@@ -197,20 +198,27 @@ def main():
     # 4. 抓取并生成 JS
     data = parse_subject(selected_id, status=status)
     pyperclip.copy(to_js_snippet(data))
-    print(f"数据已复制到剪贴板，状态为 '{status}'。请粘贴到网页的导入框中。")
+    print(f"数据已复制到剪贴板，状态为 '{status}'。请粘贴到网页的导入框中。\n")
+
+    return True
 
 
 if __name__ == "__main__":
     while True:
         try:
-            main()
+            if main() == False:
+                if not questionary.confirm("是否继续导入其他作品？").ask():
+                    print("已选择退出程序。")
+                    break
+            else:
+                continue
 
         # requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
         except requests.exceptions.RequestException as e:
             print(f"网络请求错误: {e}")
             print("请检查网络连接，稍后重试。\n可能是网络问题或访问过于频繁。")
-            retry = questionary.confirm("是否重试？").ask()
-            if not retry:
+            if not questionary.confirm("是否重试？").ask():
+                print("用户选择不重试，退出程序。")
                 break
 
         except KeyboardInterrupt:
