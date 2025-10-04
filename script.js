@@ -17,6 +17,7 @@ const modalTags = document.getElementById('modal-tags');
 const modalDesc = document.getElementById('modal-desc');
 const modalFavBtn = document.getElementById('modal-fav');
 const modalStatus = document.getElementById('modal-status');
+const footer = document.createElement('footer');
 
 const ORIGINAL = BANGUMI_DATA.map(x => ({
     ...x
@@ -317,10 +318,52 @@ function currentFiltered() {
     return res;
 }
 
+function updateFooterStats(list) {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+
+    const total = ORIGINAL.length;
+    const showing = list.length;
+
+    // 各状态统计
+    const counts = {
+        unprepared: 0,
+        planned: 0,
+        watching: 0,
+        abandoned: 0,
+        finished: 0,
+    };
+
+    for (const b of ORIGINAL) {
+        if (counts[b.status] !== undefined) counts[b.status]++;
+    }
+
+    footer.innerHTML = `
+        <div class="footer-stats">
+            <span class="material-icons">bar_chart</span>
+            当前展示：<strong>${showing}</strong> / 全部：<strong>${total}</strong>
+            ｜ <span class="material-icons status-icon unprepared">hourglass_empty</span> ${counts.unprepared}
+            ｜ <span class="material-icons status-icon planned">event</span> ${counts.planned}
+            ｜ <span class="material-icons status-icon watching">tv</span> ${counts.watching}
+            ｜ <span class="material-icons status-icon abandoned">cancel</span> ${counts.abandoned}
+            ｜ <span class="material-icons status-icon finished">check_circle</span> ${counts.finished}
+        </div>
+        <div class="footer-meta">
+            <span class="material-icons">copyright</span> 2025 LimeBow Studios
+        </div>
+    `;
+}
+
+
 function updateGallery() {
     gallery.innerHTML = '';
-    currentFiltered().forEach(b => gallery.appendChild(createCard(b)));
+    const filtered = currentFiltered();
+    filtered.forEach(b => gallery.appendChild(createCard(b)));
+
+    // 页脚统计
+    updateFooterStats(filtered);
 }
+
 
 /* ========== 初始化绑定 ========== */
 themeToggle.onclick = () => document.body.classList.toggle('light');
