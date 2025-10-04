@@ -3,18 +3,17 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <title>Bangumi Gallery | Rinkio-Lab</title>
-
-    <meta name="description" content="Rinkio's Blog">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Rin's Gallery</title>
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 
+    <!-- Material Icons -->
     <style>
         @font-face {
             font-family: "Material Icons";
             font-style: normal;
             font-weight: 400;
-            src: url("assets/fonts/Material\ Icons.woff2") format("woff2");
+            src: url("assets/Material Icons.woff2") format("woff2");
         }
 
         .material-icons {
@@ -34,217 +33,118 @@
             -webkit-font-smoothing: antialiased;
         }
     </style>
-    <link rel="stylesheet" href="assets/materialize.min.css" />
-    <link rel="stylesheet" href="assets/fonts/Iosevka.css" />
 
     <!-- CSS -->
-    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="grey lighten-5">
-    <!-- Modal 结构 -->
-    <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <h4 id="modalTitle"></h4>
-            <p id="modalOther"></p>
-            <p id="modalInfo"></p>
-            <p id="modalDesc"></p>
+<body>
+    <header>
+        <div class="header-left">
+            <h1 class="header-title">Rin's Gallery</h1>
+            <div class="controls">
+                <!-- 搜索标题 -->
+                <div class="icon-input">
+                    <span class="material-icons">search</span>
+                    <input id="searchInput" type="text" placeholder="搜索标题或别名">
+                </div>
+                <!-- 搜索标签 -->
+                <div class="tag-search-wrapper icon-input">
+                    <span class="material-icons">label</span>
+                    <input id="tagSearchInput" type="text" placeholder="搜索标签">
+                    <div id="tagSuggestions" class="suggestions"></div>
+                </div>
+                <!-- 排序 -->
+                <select id="sortSelect">
+                    <option value="title">按标题排序</option>
+                    <option value="year-desc">年份（新→旧）</option>
+                    <option value="year-asc">年份（旧→新）</option>
+                    <option value="rating-desc">评分（高→低）</option>
+                    <option value="rating-asc">评分（低→高）</option>
+                </select>
+                <!-- 状态过滤 -->
+                <div class="status-filters">
+                    <label class="modern-checkbox">
+                        <input type="checkbox" data-status="planned">
+                        <span class="checkmark"></span>
+                        计划
+                    </label>
+                    <label class="modern-checkbox">
+                        <input type="checkbox" data-status="watching">
+                        <span class="checkmark"></span>
+                        在看
+                    </label>
+                    <label class="modern-checkbox">
+                        <input type="checkbox" data-status="finished">
+                        <span class="checkmark"></span>
+                        已完结
+                    </label>
+                </div>
+            </div>
         </div>
-        <div class="modal-footer">
-            <a href="#!" class="modal-close waves-effect waves-green btn-flat">关闭</a>
+        <div class="header-right">
+            <!-- 主题切换 -->
+            <button id="themeToggle" class="btn">
+                <span class="material-icons">dark_mode</span>
+            </button>
+            <!-- 批量模式 -->
+            <button id="batchModeToggle" class="btn">
+                <span class="material-icons">calculate</span>
+            </button>
+            <!-- 番组表单 -->
+            <button id="batchModeToggle" class="btn" onclick="window.location.href='bangumi.html'">
+                <span class="material-icons">edit</span>
+            </button>
+        </div>
+    </header>
+
+    <div id="selectedTags" class="selected-tags"></div>
+    <main id="gallery" class="gallery"></main>
+
+    <footer>© 2025 LimeBow Studios</footer>
+
+    <!-- Modal -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="modalClose" class="close-btn">
+                <span class="material-icons">close</span>
+            </button>
+            <div class="modal-top">
+                <img id="modal-cover" src="" alt="">
+                <div class="modal-info">
+                    <h2 id="modal-title"></h2>
+                    <p id="modal-meta"></p>
+                    <p id="modal-other" class="muted"></p>
+                    <div id="modal-tags" class="tag-scroll single-line"></div>
+                </div>
+            </div>
+            <div id="modal-desc" class="desc-scroll"></div>
+            <div class="modal-actions">
+                <button id="modal-fav" class="fav-btn">
+                    <span class="material-icons">favorite_border</span> 收藏
+                </button>
+                <span id="modal-status"></span>
+            </div>
         </div>
     </div>
 
-    <!-- Navbar -->
-    <nav class="teal">
-        <div class="nav-wrapper container">
-            <a class="brand-logo" href="#">番組ギャラリー</a>
-            <ul class="right hide-on-med-and-down">
-                <li>
-                    <a id="themeBtn" href="#!">
-                        <i class="material-icons left" id="themeIcon">brightness_6</i>
-                        <span id="themeLabel">切换主题（当前：跟随系统）</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://materializecss.com/getting-started.html" target="_blank" rel="noopener">
-                        <i class="material-icons left">open_in_new</i><span
-                            style="font-size: smaller;">Materialize</span> 文档
-                    </a>
-                </li>
-                <li>
-                    <a href="#about"><i class="material-icons left">info_outline</i>关于</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+    <div id="statusModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>选择状态</h3>
+            <div class="status-options">
+                <button data-status="planned" class="btn"><span class="material-icons">schedule</span> 计划</button>
+                <button data-status="watching" class="btn"><span class="material-icons">tv</span> 在看</button>
+                <button data-status="finished" class="btn"><span class="material-icons">check_circle</span> 已完结</button>
 
-    <!-- Controls -->
-    <section class="section">
-        <div class="container">
-            <div class="row">
-                <div class="controls">
-                    <div class="col s6 m3 l2">
-                        <a href="bangumi.html"><i class="material-icons left">edit</i>番组表单<br>生成器</a>
-                    </div>
-                    <!-- 搜索 -->
-                    <div class="input-field col s12 m6 l4">
-                        <i class="material-icons prefix">search</i>
-                        <input id="searchInput" type="text" placeholder="搜索：标题 / 别名" />
-                    </div>
-
-                    <!-- 排序 -->
-                    <div class="input-field col s6 m3 l2">
-                        <select id="sortField">
-                            <option value="title" selected>标题</option>
-                            <option value="rating">评分</option>
-                            <option value="year">年份</option>
-                            <option value="episodes">话数</option>
-                        </select>
-                        <label>排序字段</label>
-                    </div>
-
-                    <div class="input-field col s6 m3 l2">
-                        <select id="sortOrder">
-                            <option value="asc" selected>升序</option>
-                            <option value="desc">降序</option>
-                        </select>
-                        <label>排序方向</label>
-                    </div>
-
-                    <!-- 标签筛选（动态渲染） -->
-                    <div class="input-field col s6 m3 l2">
-                        <div id="tagChips" class="chips chips-placeholder"></div>
-                    </div>
-
-                    <!-- 模式切换 -->
-                    <div class="col s12 m6 l4 right-align">
-                        <div class="btn-group mode-toggle right">
-                            <a id="gridBtn" class="btn waves-effect active-mode">
-                                <i class="material-icons left">grid_on</i>网格
-                            </a>
-                            <a id="listBtn" class="btn waves-effect">
-                                <i class="material-icons left">view_list</i>列表
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <!-- 靠右 -->
+                <button id="statusCancel" class="btn" style="float: right;"><span class="material-icons">close</span> 取消</button>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- 内容 -->
-    <main class="container" id="contentArea" aria-live="polite">
-        <!-- JS 渲染：网格（cards）或 列表（collection） -->
-    </main>
 
-    <!-- 分页 -->
-<!--
-<div class="section">
-  <div class="container center">
-    <ul id="pagination" class="pagination"></ul>
-  </div>
-</div>
--->
-
-    <!-- 关于 -->
-    <footer id="about" class="page-footer teal">
-        <div class="container">
-            <div class="row">
-                <div class="col s12 m8">
-                    <h5 class="white-text">关于本页 / <a class="grey-text text-lighten-4"
-                            href="https://github.com/Rinkio-Lab/Bangumi-Gallery" target="_blank">GitHub</a></h5>
-                    <p class="grey-text text-lighten-4">
-                        Bangumi Gallery 是一个现代化的番剧展示平台，由 Rinkio-Lab 精心打造。采用 Masonry.js 实现优雅的瀑布流布局，
-                        结合 Materialize CSS 框架提供响应式设计和美观的 UI 组件。支持多种视图模式（网格/列表）、实时搜索、多标签筛选、
-                        自定义排序和暗色模式。所有数据本地存储，无需联网即可快速浏览。
-                    </p>
-                </div>
-            </div>
-        </div>
-        <div class="footer-copyright">
-            <div class="container">
-                © 2025 Rinkio's Blog. All rights reserved.
-                <a class="grey-text text-lighten-4 right" href="https://github.com/Rinkio-Lab"
-                    target="_blank">GitHub</a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- JS -->
-    <script src="assets/masonry.pkgd.min.js"></script>
-    <script src="assets/materialize.min.js"></script>
-
-    <!-- 数据 -->
     <script src="assets/bangumi.js"></script>
-    <!-- 逻辑 -->
-    <script src="main.js"></script>
-
-    <!-- 主题切换逻辑 -->
-    <script>
-        // --- 三态：跟随系统(null) / 暗(dark) / 亮(light) ---
-        const KEY = "bangumi_theme_v1";
-        const themeBtn = document.getElementById("themeBtn");
-        const themeIcon = document.getElementById("themeIcon");
-        const themeLabel = document.getElementById("themeLabel");
-
-        function applyTheme(theme) {
-            // theme: "dark" | "light" | null
-            if (theme === "dark" || theme === "light") {
-                document.documentElement.setAttribute("data-theme", theme);
-                localStorage.setItem(KEY, theme);
-            } else {
-                document.documentElement.removeAttribute("data-theme");
-                localStorage.setItem(KEY, "");
-            }
-            updateThemeBtn();
-        }
-
-        function currentTheme() {
-            return document.documentElement.getAttribute("data-theme"); // null | "dark" | "light"
-        }
-
-        function updateThemeBtn() {
-            const theme = currentTheme();
-            themeLabel.textContent = "黑暗模式";
-            // 文案与图标联动
-            if (theme === "dark") {
-                // themeLabel.textContent = "切换主题（当前：暗）";
-                themeIcon.textContent = "dark_mode"; // 🌙
-            } else if (theme === "light") {
-                // themeLabel.textContent = "切换主题（当前：亮）";
-                themeIcon.textContent = "light_mode"; // ☀️
-            } else {
-                // themeLabel.textContent = "切换主题（当前：跟随系统）";
-                themeIcon.textContent = "brightness_6"; // 自动
-            }
-        }
-
-        // 点击在三态间循环
-        themeBtn.addEventListener("click", () => {
-            const cur = currentTheme();
-            if (!cur) applyTheme("dark");       // 自动 -> 暗
-            else if (cur === "dark") applyTheme("light"); // 暗 -> 亮
-            else applyTheme(null);              // 亮 -> 自动
-        });
-
-        // 初始化：应用用户偏好
-        (function initTheme() {
-            const saved = localStorage.getItem(KEY);
-            if (saved === "dark" || saved === "light") {
-                document.documentElement.setAttribute("data-theme", saved);
-            } else {
-                document.documentElement.removeAttribute("data-theme");
-            }
-            updateThemeBtn();
-        })();
-
-        // 当处于“跟随系统”时，系统外观改变要更新按钮提示
-        const mq = window.matchMedia("(prefers-color-scheme: dark)");
-        mq.addEventListener?.("change", () => {
-            if (!currentTheme()) updateThemeBtn();
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 
 </html>

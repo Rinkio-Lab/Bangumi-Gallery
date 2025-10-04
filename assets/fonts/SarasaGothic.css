@@ -1,0 +1,53 @@
+/* 字体族定义 */
+
+/* SC */
+@font-face {
+    font-family: 'Sarasa Gothic SC';
+    src: url('../fonts/SarasaGothicSC-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Sarasa Gothic SC';
+    src: url('../fonts/SarasaGothicSC-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Sarasa Gothic SC';
+    src: url('../fonts/SarasaGothicSC-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'Sarasa Gothic SC';
+    src: url('../fonts/SarasaGothicSC-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* J */
+@font-face {
+    font-family: 'Sarasa Gothic J';
+    src: url('../fonts/SarasaGothicJ-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Sarasa Gothic J';
+    src: url('../fonts/SarasaGothicJ-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Sarasa Gothic J';
+    src: url('../fonts/SarasaGothicJ-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'Sarasa Gothic J';
+    src: url('../fonts/SarasaGothicJ-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+}
