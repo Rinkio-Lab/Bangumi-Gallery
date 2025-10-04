@@ -102,7 +102,7 @@
                 <span class="material-icons">calculate</span>
             </button>
             <!-- 番组表单 -->
-            <button id="batchModeToggle" class="btn" onclick="window.location.href='bangumi.html'">
+            <button id="batchModeToggle" class="btn" onclick="window.location.href='bangumi.html'" disabled>
                 <span class="material-icons">edit</span>
             </button>
         </div>
@@ -142,9 +142,11 @@
         <div class="modal-content">
             <h3>选择状态</h3>
             <div class="status-options">
-                <button data-status="planned" class="btn"><span class="material-icons">schedule</span> 计划</button>
-                <button data-status="watching" class="btn"><span class="material-icons">tv</span> 在看</button>
-                <button data-status="finished" class="btn"><span class="material-icons">check_circle</span> 已完结</button>
+                <button data-status="planned" class="btn"><span class="material-icons">help</span> 未准备</button>
+                <button data-status="planned" class="btn"><span class="material-icons">event</span> 已计划</button>
+                <button data-status="watching" class="btn"><span class="material-icons">play_circle</span> 正在看</button>
+                <button data-status="abandoned" class="btn"><span class="material-icons">block</span> 已放弃</button>
+                <button data-status="finished" class="btn"><span class="material-icons">check_circle</span> 已看完</button>
 
                 <!-- 靠右 -->
                 <button id="statusCancel" class="btn" style="float: right;"><span class="material-icons">close</span> 取消</button>

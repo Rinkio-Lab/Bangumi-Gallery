@@ -156,6 +156,11 @@ h1.header-title {
     cursor: pointer;
 }
 
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Tag 搜索框补全 */
 .tag-search-wrapper {
     position: relative;
