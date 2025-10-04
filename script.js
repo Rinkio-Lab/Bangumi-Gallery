@@ -254,26 +254,32 @@ function renderTagChips() {
 function currentFiltered() {
     const kw = searchInput.value.trim().toLowerCase();
     let res = [...ORIGINAL];
-    const sts = statusCheckboxes.filter(x => x.checked).map(x => x.dataset.status);
-    if (kw) res = res.filter(b => b.mainTitle.toLowerCase().includes(kw) || (b.otherTitle || []).some(o => o.toLowerCase().includes(kw)));
-    if (activeTags.size > 0) res = res.filter(b => [...activeTags].every(t => b.tags.includes(t)));
-    if (sts.length > 0) res = res.filter(b => sts.includes(b.status));
-    switch (sortSelect.value) {
-        case 'year-desc':
-            res.sort((a, b) => b.year - a.year);
-            break;
-        case 'year-asc':
-            res.sort((a, b) => a.year - b.year);
-            break;
-        case 'rating-desc':
-            res.sort((a, b) => b.rating - a.rating);
-            break;
-        case 'rating-asc':
-            res.sort((a, b) => a.rating - b.rating);
-            break;
-        default:
-            res.sort((a, b) => collator.compare(a.mainTitle, b.mainTitle));
+
+    // 状态筛选
+    const selectedStates = statusCheckboxes.filter(ch => ch.checked).map(ch => ch.dataset.status);
+    if (selectedStates.length > 0 && selectedStates.length < statusCheckboxes.length) {
+        // 只有部分状态选中时才过滤
+        res = res.filter(b => selectedStates.includes(b.status));
     }
+
+    // 关键词筛选
+    if (kw) res = res.filter(b =>
+        b.mainTitle.toLowerCase().includes(kw) ||
+        (b.otherTitle || []).some(o => o.toLowerCase().includes(kw))
+    );
+
+    // 标签筛选
+    if (activeTags.size > 0) res = res.filter(b => [...activeTags].every(t => b.tags.includes(t)));
+
+    // 排序
+    switch (sortSelect.value) {
+        case 'year-desc': res.sort((a, b) => b.year - a.year); break;
+        case 'year-asc': res.sort((a, b) => a.year - b.year); break;
+        case 'rating-desc': res.sort((a, b) => b.rating - a.rating); break;
+        case 'rating-asc': res.sort((a, b) => a.rating - b.rating); break;
+        default: res.sort((a, b) => collator.compare(a.mainTitle, b.mainTitle));
+    }
+
     return res;
 }
 
