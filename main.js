@@ -47,9 +47,14 @@ function getFilteredSortedData() {
             (it.mainTitle && it.mainTitle.toLowerCase().includes(kw)) ||
             (it.otherTitle || []).some(name => name.toLowerCase().includes(kw));
 
-        const tagMatch =
-            tags.length === 0 ||
-            (it.tags || []).some(t => tags.includes(t.toLowerCase()));
+        // 修复标签筛选：当有标签选择时，必须匹配所有选中的标签
+        const tagMatch = 
+            tags.length === 0 || 
+            tags.every(selectedTag => 
+                (it.tags || []).some(itemTag => 
+                    itemTag.toLowerCase() === selectedTag
+                )
+            );
 
         return titleMatch && tagMatch;
     }).sort((a, b) => compare(a, b, state.sortField, state.sortOrder));
@@ -82,18 +87,46 @@ function foldAlias(otherTitle = []) {
     </div>`;
 }
 
+// 根据屏幕宽度设置适当的列数（1-5列）
+const setResponsiveColumns = () => {
+  const screenWidth = window.innerWidth;
+  let columnClass = '';
+  
+  // 根据屏幕宽度设置不同的列数
+  if (screenWidth < 600) {
+    // 小屏幕手机 - 1列
+    columnClass = 'col s12';
+  } else if (screenWidth < 768) {
+    // 大屏幕手机 - 2列
+    columnClass = 'col s12 m6';
+  } else if (screenWidth < 992) {
+    // 平板 - 3列
+    columnClass = 'col s12 m6 l4';
+  } else if (screenWidth < 1440) {
+    // 小桌面/笔记本 - 4列
+    columnClass = 'col s12 m6 l3';
+  } else {
+    // 大屏幕/2K及以上 - 5列
+    columnClass = 'col s12 m6 l2';
+  }
+  
+  return columnClass;
+};
+
 // 渲染网格模式（瀑布流，使用 Masonry.js）
 function renderGrid(list, mount) {
   // 1. 创建容器，保留 Materialize 响应式 class，同时加上 Masonry 需要的 grid
   const row = document.createElement('div');
   row.className = 'row grid';
-  row.style.margin = '0';          // 去掉 Materialize 负 margin，避免偏移
+  row.style.margin = '0';
+  row.style.padding = '0'; // 完全移除左右边距          // 去掉 Materialize 负 margin，避免偏移
 
   // 2. 逐个生成卡片
   list.forEach(item => {
     const col = document.createElement('div');
     // 保留响应式断点 + 加 grid-item（Masonry 识别用）
-    col.className = 'col s12 m6 l3 grid-item';
+    // 使用与grid-sizer相同的响应式类
+col.className = `${setResponsiveColumns()} grid-item`;
 
     col.innerHTML = `
       <div class="card hoverable">
@@ -129,15 +162,42 @@ function renderGrid(list, mount) {
   mount.appendChild(row);
 
   // 3. 初始化 Masonry 瀑布流
+  
+  // 先添加一个网格大小基准元素
+  const sizer = document.createElement('div');
+  sizer.className = `grid-sizer ${setResponsiveColumns()}`;
+  row.prepend(sizer);
+
+  // 确保容器有足够的宽度
+  row.style.width = '100%';
+  
   // eslint-disable-next-line no-undef
   const msnry = new Masonry(row, {
     itemSelector: '.grid-item',
     gutter: 16,          // 列间距（px）
-    fitWidth: true,      // 容器宽度自适应
-    transitionDuration: '0.2s'
+    fitWidth: false,     // 不使用fitWidth，使用100%宽度
+    transitionDuration: '0.2s',
+    columnWidth: '.grid-sizer',  // 使用列宽基准元素
+    percentPosition: true        // 使用百分比定位
   });
 
-  row._masonry = msnry;
+  row.masonry = msnry;
+  
+  // 监听窗口大小变化，重新设置列数
+  window.addEventListener('resize', () => {
+    // 更新网格大小基准元素的类
+    const gridSizer = row.querySelector('.grid-sizer');
+    if (gridSizer) {
+      gridSizer.className = `grid-sizer ${setResponsiveColumns()}`;
+      // 强制重新布局
+      if (msnry) msnry.layout();
+    }
+  });
+  
+  // 强制重新布局
+  setTimeout(() => {
+    if (msnry) msnry.layout();
+  }, 100);
 
   // 4. 图片加载完后重新布局（防止图片未加载完导致错位）
   row.addEventListener('load', (e) => {
@@ -172,16 +232,22 @@ function renderList(list, mount) {
 
         // 获取到按钮后才绑定事件
         const btn = li.querySelector('.detail-btn');
-        if (btn) {
-            btn.addEventListener('click', () => {
-                const data = BANGUMI_DATA.find(x => x.id === item.id);
-                $('#modalTitle').textContent = data.mainTitle;
-                $('#modalOther').textContent = (data.otherTitle || []).join(' / ');
-                $('#modalInfo').textContent = `${data.year} · ${data.episodes} 话 · ⭐ ${data.rating}`;
-                $('#modalDesc').textContent = data.desc || '—';
-                modalInst.open();
-            });
-        }
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        const data = BANGUMI_DATA.find(x => x.id === item.id);
+                        const modalTitle = $('#modalTitle');
+                        const modalOther = $('#modalOther');
+                        const modalInfo = $('#modalInfo');
+                        const modalDesc = $('#modalDesc');
+                        
+                        if (modalTitle) modalTitle.textContent = data.mainTitle;
+                        if (modalOther) modalOther.textContent = (data.otherTitle || []).join(' / ');
+                        if (modalInfo) modalInfo.textContent = `${data.year} · ${data.episodes} 话 · ⭐ ${data.rating}`;
+                        if (modalDesc) modalDesc.textContent = data.desc || '—';
+                        
+                        if (modalInst) modalInst.open();
+                    });
+                }
 
         ul.appendChild(li);
     });
