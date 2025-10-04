@@ -11,6 +11,7 @@
     --text: #eaeaea;
     --muted: #9aa0ad;
     --accent: #ff79c6;
+    --accent-two: #8be9fd;
     --tag-bg: #2a2d3b;
 }
 
@@ -20,6 +21,7 @@ body.light {
     --text: #111827;
     --muted: #6b7280;
     --accent: #7c3aed;
+    --accent-two: #0ea5e9;
     --tag-bg: #efefef;
 }
 

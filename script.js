@@ -57,6 +57,13 @@ function createCard(b) {
     wrap.className = 'card-wrapper';
     wrap.dataset.id = b.id;
 
+    // 强推处理
+    if (b.isRecommended) {
+        wrap.style.outline = '5px solid var(--accent-two)';
+        wrap.style.outlineOffset = '3px';
+        wrap.style.borderRadius = '12px';
+    }
+
     const fav = favorites.has(b.id);
     const high = b.rating >= 8;
     const st = b.status;
@@ -64,31 +71,56 @@ function createCard(b) {
     if (fav) badges.push('<span class="material-icons">favorite</span>');
     if (high) badges.push('<span class="material-icons">star</span>');
     if (st === 'watching') badges.push('<span class="material-icons">tv</span>');
-    if (st === 'finished') badges.push('<span class="material-icons">check_circle</span>');
+    if (st === 'finished') badges.push('<span class="material-icons">check</span>');
     if (st === 'planned') badges.push('<span class="material-icons">schedule</span>');
 
-    wrap.innerHTML = `<div class="card">
-        <img src="${b.cover}">
-        <div class="card-body">
-            <div class="title">${escapeHtml(b.mainTitle)}</div>
-            <div class="meta">${b.year} · <span class="material-icons">star</span>${b.rating} · ${b.episodes}话</div>
-            <div class="tags">${b.tags.slice(0, 4).map(t => `<span class='tag'>${t}</span>`).join('')}</div>
-            <div class="badges">${badges.join(' ')}</div>
-        </div>
+    wrap.innerHTML = `
+    <div class="card">
+      <div class="cover-wrapper" style="position: relative;">
+        <img src="${b.cover}" class="cover-img">
+        ${b.isRecommended ? `<div class="rec-banner" style="
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background-color: var(--accent);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 10;
+          ">强推</div>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="title">${escapeHtml(b.mainTitle)}</div>
+        <div class="meta">${b.year} · ${b.rating} · ${b.episodes}话</div>
+        <div class="tags">${b.tags.slice(0, 4).map(t => `<span class='tag'>${t}</span>`).join('')}</div>
+        <div class="badges">${badges.join(' ')}</div>
+      </div>
     </div>
-    <button class="fav-icon"><span class="material-icons">${fav ? 'favorite' : 'favorite_border'}</span></button>`;
+    <button class="fav-icon">${fav ? '<span class="material-icons">favorite</span>' : '<span class="material-icons">favorite_border</span>'}</button>
+    `;
 
+    // 点击隐藏横幅
+    const banner = wrap.querySelector('.rec-banner');
+    if (banner) banner.onclick = e => { e.stopPropagation(); banner.style.display = 'none'; };
+
+    // 收藏按钮
     wrap.querySelector('.fav-icon').onclick = e => {
         e.stopPropagation();
         toggleFav(b.id);
         updateGallery();
     };
+
+    // 点击卡片
     wrap.querySelector('.card').onclick = () => {
         if (batchMode) toggleBatch(b.id, wrap);
         else openModal(b);
     };
+
     return wrap;
 }
+
 
 /* ========== Modal ========== */
 function openModal(b) {
