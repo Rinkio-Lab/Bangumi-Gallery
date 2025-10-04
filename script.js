@@ -70,8 +70,10 @@ function createCard(b) {
     const badges = [];
     if (fav) badges.push('<span class="material-icons">favorite</span>');
     if (high) badges.push('<span class="material-icons">star</span>');
+    if (st === 'unprepared') badges.push('<span class="material-icons">help</span><span style="font-size: 12px; margin-left: 4px;">未分类/未准备</span>');
     if (st === 'watching') badges.push('<span class="material-icons">tv</span>');
     if (st === 'finished') badges.push('<span class="material-icons">check</span>');
+    if (st === 'abandoned') badges.push('<span class="material-icons">block</span>');
     if (st === 'planned') badges.push('<span class="material-icons">schedule</span>');
 
     wrap.innerHTML = `
@@ -102,8 +104,8 @@ function createCard(b) {
     `;
 
     // 点击隐藏横幅
-    const banner = wrap.querySelector('.rec-banner');
-    if (banner) banner.onclick = e => { e.stopPropagation(); banner.style.display = 'none'; };
+    // const banner = wrap.querySelector('.rec-banner');
+    // if (banner) banner.onclick = e => { e.stopPropagation(); banner.style.display = 'none'; };
 
     // 收藏按钮
     wrap.querySelector('.fav-icon').onclick = e => {

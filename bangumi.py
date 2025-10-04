@@ -1,46 +1,37 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-bangumi_importer.py - 从 chii.in(bangumi) 的 subject 页面抓取信息，输出可粘贴到 HTML 的 JS 段
-用法:
-  uv add requests beautifulsoup4
-  python .\bangumi_importer.py https://chii.in/subject/9912
-或者:
-  python .\bangumi_importer.py 9912
-输出示例:
-  // 由 bangumi_importer.py 生成
-  const BANGUMI_DATA = [ ... ];
+bangumi_importer.py - 支持搜索、选择、状态交互的 bangumi 导入工具
+依赖：
+    uv add requests beautifulsoup4 questionary pyperclip
 """
 
-from typing import List, Dict, Optional
-import sys
-import re
-import json
-import requests
+from typing import List, Dict
+import sys, re, json, requests
 from bs4 import BeautifulSoup
+import questionary
+import pyperclip
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible)"}
 
+# 全局状态选项
+STATUS_OPTIONS = ["unprepared", "planned", "watching", "abandoned", "finished"]
+
 
 def fetch_html(url: str) -> str:
-    """请求页面并返回 HTML 文本（设置合理编码）"""
     r = requests.get(url, headers=HEADERS, timeout=15)
     r.raise_for_status()
-    # 让 requests 尽量用推断编码
     r.encoding = r.apparent_encoding or r.encoding or "utf-8"
     return r.text
 
 
 def text_excluding_label(li) -> str:
-    """取 li 中除去 <span class='tip'> 标签文本后的其它文本（把碎片拼接成单行）"""
     label_span = li.find("span", class_="tip")
     label_text = label_span.get_text(strip=True) if label_span else None
     parts = []
     for s in li.stripped_strings:
-        # 跳过 label 本身
         if label_text and s.strip() == label_text:
             continue
-        # 去掉 '：' 或 '：' 形式残留
         if s.strip() in (":", "："):
             continue
         parts.append(s.strip())
@@ -57,9 +48,7 @@ def unique_preserve_order(seq: List[str]) -> List[str]:
     return out
 
 
-def parse_subject(url_or_id: str) -> Dict:
-    """根据 URL 或 ID 抓取并解析数据，返回一个 dict"""
-    # 允许直接传 9912 或 完整 url
+def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
     if re.match(r"^\d+$", url_or_id):
         url = f"https://chii.in/subject/{url_or_id}"
         subject_id = url_or_id
@@ -71,90 +60,77 @@ def parse_subject(url_or_id: str) -> Dict:
     html = fetch_html(url)
     soup = BeautifulSoup(html, "html.parser")
 
-    # --- 标题（按你要求使用选择器） ---
-    main_title_el = soup.select_one("#headerSubject > h1 > a")
-    if not main_title_el:
-        # 兼容回退
-        main_title_el = soup.select_one("h1.nameSingle a")
+    main_title_el = soup.select_one("#headerSubject > h1 > a") or soup.select_one(
+        "h1.nameSingle a"
+    )
     main_title = main_title_el.get_text(strip=True) if main_title_el else ""
 
-    # --- 简介（#subject_summary） ---
     desc_el = soup.select_one("#subject_summary")
     desc = desc_el.get_text(" ", strip=True) if desc_el else ""
 
-    # --- 封面（infobox 的图片） ---
-    cover = ""
-    cover_el = soup.select_one("#bangumiInfo .infobox img") or soup.select_one(".infobox img")
-    if cover_el and cover_el.get("src"):
-        cover = cover_el.get("src").strip()
-        # 完整化 protocol-relative URL
-        if cover.startswith("//"):
-            cover = "https:" + cover
+    cover_el = soup.select_one("#bangumiInfo .infobox img") or soup.select_one(
+        ".infobox img"
+    )
+    cover = cover_el.get("src").strip() if cover_el and cover_el.get("src") else ""
+    if cover.startswith("//"):
+        cover = "https:" + cover
 
-    # --- 评分（优先 .global_score .number） ---
     rating = None
-    score_el = soup.select_one(".global_score .number") or soup.select_one(".global_rating .number") or soup.select_one(".global_score") or soup.select_one(".global_rating")
+    score_el = (
+        soup.select_one(".global_score .number")
+        or soup.select_one(".global_rating .number")
+        or soup.select_one(".global_score")
+        or soup.select_one(".global_rating")
+    )
     if score_el:
-        txt = score_el.get_text(" ", strip=True)
-        m = re.search(r"(\d+(?:\.\d+)?)", txt)
+        m = re.search(r"(\d+(?:\.\d+)?)", score_el.get_text(" ", strip=True))
         if m:
             try:
                 rating = float(m.group(1))
             except:
                 rating = None
 
-    # --- infobox 中的字段：话数 / 放送开始（取年份） / 中文名 / 别名 ---
     year = None
     episodes = None
     chinese_name = None
-    # 遍历 infobox li 来解析字段（不使用 :contains）
     for li in soup.select("#infobox li"):
-        tip = li.find("span", class_="tip")
-        tip_text = tip.get_text(strip=True) if tip else ""
+        tip_text = (
+            li.find("span", class_="tip").get_text(strip=True)
+            if li.find("span", class_="tip")
+            else ""
+        )
         val = text_excluding_label(li)
         if "话数" in tip_text:
             m = re.search(r"(\d+)", val)
-            if m:
-                episodes = int(m.group(1))
+            episodes = int(m.group(1)) if m else None
         elif "放送开始" in tip_text or "首播" in tip_text:
             m = re.search(r"(\d{4})", val)
-            if m:
-                year = int(m.group(1))
+            year = int(m.group(1)) if m else None
         elif "中文名" in tip_text:
             chinese_name = val or None
 
-    # 别名：infobox 内的 sub_container 中的 li
     other_titles: List[str] = []
     if chinese_name:
         other_titles.append(chinese_name)
-
     for sub_li in soup.select("#infobox .sub_container ul li"):
-        # 每个 li 可能是 "别名: Nichijou" 或 "にちじょう"
         txt = sub_li.get_text(" ", strip=True)
-        # 去掉可能的前缀 "别名:" 或 "别名"
-        txt = re.sub(r"^\s*别名[:：]?\s*", "", txt)
-        txt = txt.strip()
+        txt = re.sub(r"^\s*别名[:：]?\s*", "", txt).strip()
         if txt:
             other_titles.append(txt)
-
     other_titles = unique_preserve_order(other_titles)
 
-    # --- 标签：.subject_tag_section .inner a 只取 <span> 的文本（去掉 small 的人数） ---
     tags = []
     for a in soup.select(".subject_tag_section .inner a"):
         span = a.find("span")
-        if span:
-            t = span.get_text(" ", strip=True)
-        else:
-            # 兜底：删掉尾部数字（人数）
-            t = a.get_text(" ", strip=True)
-            t = re.sub(r"\s*\d+\s*$", "", t)
-        t = t.strip()
+        t = (
+            span.get_text(" ", strip=True)
+            if span
+            else re.sub(r"\s*\d+\s*$", "", a.get_text(" ", strip=True)).strip()
+        )
         if t:
             tags.append(t)
     tags = unique_preserve_order(tags)
 
-    # --- 最终组装 ---
     data = {
         "id": subject_id,
         "mainTitle": main_title,
@@ -164,41 +140,79 @@ def parse_subject(url_or_id: str) -> Dict:
         "rating": rating if rating is not None else None,
         "tags": tags,
         "cover": cover,
-        "status": "planned",
+        "status": status,
         "desc": desc,
     }
     return data
 
 
+def search_subject(keyword: str) -> List[Dict]:
+    """根据关键词搜索 bangumi，返回列表 [{'id':..., 'title':..., 'subtitle':...}]"""
+    url = f"https://chii.in/subject_search/{keyword}?cat=2"
+    html = fetch_html(url)
+    soup = BeautifulSoup(html, "html.parser")
+    results = []
+    for li in soup.select("#browserItemList li.item"):
+        a_main = li.select_one("h3 a.l")
+        a_sub = li.select_one("h3 small.grey")
+        if a_main:
+            results.append(
+                {
+                    "id": re.search(r"/subject/(\d+)", a_main.get("href")).group(1),
+                    "title": a_main.get_text(strip=True),
+                    "subtitle": a_sub.get_text(strip=True) if a_sub else "",
+                }
+            )
+    return results
+
+
 def to_js_snippet(obj: Dict) -> str:
-    """把数据输出成 JS 段，可直接粘到网页的导入框"""
     arr = [obj]
-    # 用 JSON（键被引号包围）是兼容的：浏览器 eval/JSON.parse 都能处理
     json_str = json.dumps(arr, ensure_ascii=False, indent=2)
-    header = "// 由 bangumi_importer.py 生成\n"
-    return header + "const BANGUMI_DATA = " + json_str + ";"
+    return "// 由 bangumi_importer.py 生成\nconst BANGUMI_DATA = " + json_str + ";"
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("用法: python bangumi_importer.py <subject url or id>")
-        print("示例: python bangumi_importer.py https://chii.in/subject/9912")
+    # 1. 输入关键词
+    keyword = questionary.text("请输入搜索关键词（Bangumi 名称）:").ask()
+    if not keyword:
+        print("未输入关键词，退出。")
         return
-    arg = sys.argv[1].strip()
-    try:
-        data = parse_subject(arg)
-    except Exception as e:
-        print("抓取或解析失败：", e)
-        raise
 
-    # print(to_js_snippet(data))
-    import pyperclip as clipboard
+    # 2. 搜索结果选择
+    results = search_subject(keyword)
+    if not results:
+        print("未找到任何结果。")
+        return
+    choices = [f"{r['title']} ({r['subtitle']}) [ID:{r['id']}]" for r in results]
+    selected = questionary.select("请选择要导入的作品:", choices=choices).ask()
+    # 提取 ID
+    selected_id = re.search(r"ID:(\d+)", selected).group(1)
 
-    clipboard.copy(to_js_snippet(data))
-    print("数据已复制到剪贴板。请粘贴到网页的导入框中。")
-    # 另打印 JSON 备份（可重定向到文件）
-    # print(json.dumps(data, ensure_ascii=False, indent=2))
+    # 3. 状态选择
+    status = questionary.select(
+        "请选择状态:", choices=STATUS_OPTIONS, default="unprepared"
+    ).ask()
+
+    # 4. 抓取并生成 JS
+    data = parse_subject(selected_id, status=status)
+    pyperclip.copy(to_js_snippet(data))
+    print(f"数据已复制到剪贴板，状态为 '{status}'。请粘贴到网页的导入框中。")
 
 
 if __name__ == "__main__":
-    main()
+    while True:
+        try:
+            main()
+
+        # requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
+        except requests.exceptions.RequestException as e:
+            print(f"网络请求错误: {e}")
+            print("请检查网络连接，稍后重试。\n可能是网络问题或访问过于频繁。")
+            retry = questionary.confirm("是否重试？").ask()
+            if not retry:
+                break
+
+        except KeyboardInterrupt:
+            print("\n用户中断，退出。")
+            break

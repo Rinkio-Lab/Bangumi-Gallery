@@ -326,12 +326,19 @@
                                             ? txt.match(/BANGUMI_DATA\s*=\s*(\[[\s\S]*\])/)[1]
                                             : txt) + ')'))();
                                     const obj = Array.isArray(arr) ? arr[0] : arr;
-                                    ["id", "mainTitle", "otherTitle", "year", "episodes", "rating", "tags", "cover", "desc"].forEach(key => {
+                                    ["id", "mainTitle", "otherTitle", "year", "episodes", "rating", "tags", "cover", "status", "desc"].forEach(key => {
                                         const el = document.getElementById(key);
                                         if (!el) return;
                                         const val = obj[key];
                                         if (key === "otherTitle" || key === "tags") {
                                             el.value = Array.isArray(val) ? val.join(", ") : val || "";
+                                        } else if (key === "status") {
+                                            for (let i = 0; i < el.options.length; i++) {
+                                                if (el.options[i].value === val) {
+                                                    el.selectedIndex = i;
+                                                    break;
+                                                }
+                                            }
                                         } else {
                                             el.value = (val === null || val === undefined) ? "" : val;
                                         }
@@ -357,10 +364,11 @@
                         <div>
                             <label for="status">状态</label>
                             <select id="status" name="status" required>
+                                <option value="unprepared">unprepared</option>
                                 <option value="planned">planned</option>
                                 <option value="watching">watching</option>
+                                <option value="abandoned">abandoned</option>
                                 <option value="finished">finished</option>
-                                <option value="dropped">dropped</option>
                             </select>
                         </div>
                     </div>
