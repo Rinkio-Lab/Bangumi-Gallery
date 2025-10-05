@@ -842,3 +842,5 @@ const BANGUMI_DATA = [{
     status: "unprepared",
     desc: "有马公生的母亲一心想把有马培育成举世闻名的钢琴家，而有马也不负母亲的期望，在念小学时就赢得许多钢琴比赛的大奖。11岁的秋天，有马的母亲过世，从此他再也听不见自己弹奏的钢琴声，沮丧的他也只好放弃演奏，但在14岁那年，经由儿时玩伴的介绍，有马认识了小提琴手宫园薰，并被薰的自由奔放吸引，没想到薰竟开口邀请公生在比赛时担任她的伴奏…"
 }];
+
+console.log(`%c[1/8]%c Loaded Bangumi data, total items: ${BANGUMI_DATA.length}`, styles.step, styles.info);

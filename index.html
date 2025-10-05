@@ -149,14 +149,48 @@
                 <button data-status="finished" class="btn"><span class="material-icons">check_circle</span> 已看完</button>
 
                 <!-- 靠右 -->
-                <button id="statusCancel" class="btn" style="float: right;"><span class="material-icons">close</span> 取消</button>
+                <button id="statusCancel" class="btn" style="float: right;"><span class="material-icons">close</span>
+                    取消</button>
             </div>
         </div>
     </div>
 
+    <!-- JS -->
+    <script>
+        // 定义颜色和样式
+        const styles = {
+            step: 'color: white; background: #4CAF50; padding: 2px 6px; border-radius: 4px;',
+            info: 'color: #10b981;',
+            success: 'color: #FF9800; font-weight: bold;',
+            logo: `
+                color: #ff79c6; 
+                font-size: 4rem; 
+                font-family: \'Great Vibes\' !important; 
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+                margin: 1rem 0 2rem .1rem; 
+                line-height: 1.6;
+                font-weight: bold;
+            `,
+            welcome: 'color: #8b5cf6; font-size: 1.2rem; margin-bottom: 2rem; display: block;'
+        };
 
+        // 放一个简单 logo
+        console.log('%cRin\'s Gallery', styles.logo);
+        console.log('%cPowered by Rinkio-Lab & LimeBow Studios.', styles.welcome);
+    </script>
+
+    <!-- Bangumi Data -->
     <script src="assets/bangumi.js"></script>
+    <!-- Scripts -->
+    <script src="assets/scripts/gallery.js"></script>
+    <script src="assets/scripts/modal.js"></script>
+    <script src="assets/scripts/batch.js"></script>
+    <script src="assets/scripts/filter.js"></script>
+    <script src="assets/scripts/theme.js"></script>
+    <script src="assets/scripts/lazy-load.js"></script>
+    <!-- Main Script -->
     <script src="script.js"></script>
+
 </body>
 
 </html>

@@ -215,6 +215,18 @@ h1.header-title {
     padding: 1rem;
 }
 
+.cover-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.cover-img.loaded {
+    opacity: 1;
+}
+
 .card-wrapper {
     position: relative;
 }
