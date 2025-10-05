@@ -1,0 +1,20 @@
+{
+    "Codegeex.RepoIndex": true,
+    "cSpell.words": [
+        "'s",
+        "bangumi",
+        "infobox",
+        "Rin",
+        "Rinkio"
+    ],
+    "cSpell.ignorePaths": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/out/**",
+        "**/.git/**",
+        "**/.vscode/**",
+        "**/__pycache__/**",
+        "**/*.pyc",
+        "assets/bangumi.js",
+    ]
+}

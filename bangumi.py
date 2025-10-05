@@ -6,7 +6,7 @@ bangumi_importer.py - 支持搜索、选择、状态交互的 bangumi 导入工�
     uv add requests beautifulsoup4 questionary pyperclip
 """
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 import sys, re, json, requests
 from bs4 import BeautifulSoup
 import questionary
@@ -47,35 +47,51 @@ def unique_preserve_order(seq: List[str]) -> List[str]:
             out.append(s)
     return out
 
-
-def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
-    if re.match(r"^\d+$", url_or_id):
-        url = f"https://chii.in/subject/{url_or_id}"
-        subject_id = url_or_id
-    else:
-        url = url_or_id
-        m = re.search(r"/subject/(\d+)", url)
-        subject_id = m.group(1) if m else url
-
-    html = fetch_html(url)
-    soup = BeautifulSoup(html, "html.parser")
-
+def extract_basic_info(soup: BeautifulSoup) -> tuple:
+    """
+    提取基本信息：标题、描述和封面
+    
+    Args:
+        soup: BeautifulSoup对象
+    
+    Returns:
+        包含标题、描述和封面的元组
+    """
+    # 提取标题
     main_title_el = soup.select_one("#headerSubject > h1 > a") or soup.select_one(
         "h1.nameSingle a"
     )
     main_title = main_title_el.get_text(strip=True) if main_title_el else ""
 
+    # 提取描述
     desc_el = soup.select_one("#subject_summary")
     desc = desc_el.get_text(" ", strip=True) if desc_el else ""
 
+    # 提取封面
     cover_el = soup.select_one("#bangumiInfo .infobox img") or soup.select_one(
         ".infobox img"
     )
-    cover = cover_el.get("src").strip() if cover_el and cover_el.get("src") else ""
+    cover = ""
+    if cover_el:
+        src = cover_el.get("src")
+        if src:
+            cover = src.strip() # type: ignore
     if cover.startswith("//"):
         cover = "https:" + cover
 
-    rating = None
+
+    return main_title, desc, cover
+
+def extract_rating(soup: BeautifulSoup) -> float:
+    """
+    提取评分信息
+    
+    Args:
+        soup: BeautifulSoup对象
+    
+    Returns:
+        评分值，如果无法提取则返回None
+    """
     score_el = (
         soup.select_one(".global_score .number")
         or soup.select_one(".global_rating .number")
@@ -86,39 +102,75 @@ def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
         m = re.search(r"(\d+(?:\.\d+)?)", score_el.get_text(" ", strip=True))
         if m:
             try:
-                rating = float(m.group(1))
+                return float(m.group(1))
             except:
-                rating = None
+                return 0.0
+    return 0.0
 
+def extract_details(soup: BeautifulSoup) -> tuple:
+    """
+    提取详细信息：年份、集数、中文名
+    
+    Args:
+        soup: BeautifulSoup对象
+    
+    Returns:
+        包含年份、集数和中文名的元组
+    """
     year = None
     episodes = None
     chinese_name = None
+
     for li in soup.select("#infobox li"):
-        tip_text = (
-            li.find("span", class_="tip").get_text(strip=True)
-            if li.find("span", class_="tip")
-            else ""
-        )
+        tip_span = li.find("span", class_="tip")
+        tip_text = tip_span.get_text(strip=True) if tip_span else ""
         val = text_excluding_label(li)
+
         if "话数" in tip_text:
             m = re.search(r"(\d+)", val)
             episodes = int(m.group(1)) if m else None
-        elif "放送开始" in tip_text or "首播" in tip_text:
+        elif "放送开始" in tip_text or "首播" in tip_text or "上映年度" in tip_text:
             m = re.search(r"(\d{4})", val)
             year = int(m.group(1)) if m else None
         elif "中文名" in tip_text:
             chinese_name = val or None
 
+    return year, episodes, chinese_name
+
+
+def extract_other_titles(soup: BeautifulSoup, chinese_name: Optional[str] = None) -> List[str]:
+    """
+    提取其他标题信息
+    
+    Args:
+        soup: BeautifulSoup对象
+        chinese_name: 中文名（可选）
+    
+    Returns:
+        其他标题列表
+    """
     other_titles: List[str] = []
     if chinese_name:
         other_titles.append(chinese_name)
+    
     for sub_li in soup.select("#infobox .sub_container ul li"):
         txt = sub_li.get_text(" ", strip=True)
         txt = re.sub(r"^\s*别名[:：]?\s*", "", txt).strip()
         if txt:
             other_titles.append(txt)
-    other_titles = unique_preserve_order(other_titles)
+    
+    return unique_preserve_order(other_titles)
 
+def extract_tags(soup: BeautifulSoup) -> List[str]:
+    """
+    提取标签信息
+    
+    Args:
+        soup: BeautifulSoup对象
+    
+    Returns:
+        标签列表
+    """
     tags = []
     for a in soup.select(".subject_tag_section .inner a"):
         span = a.find("span")
@@ -129,9 +181,51 @@ def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
         )
         if t:
             tags.append(t)
-    tags = unique_preserve_order(tags)
+    
+    return unique_preserve_order(tags)
 
-    data = {
+
+def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
+    """
+    解析bangumi主题页面，提取相关信息
+    
+    Args:
+        url_or_id: 主题URL或ID
+        status: 观看状态
+ 58      
+    Returns:
+        包含主题信息的字典
+    """
+    # 解析URL和ID
+    if re.match(r"^\d+$", url_or_id):
+        url = f"https://chii.in/subject/{url_or_id}"
+        subject_id = url_or_id
+    else:
+        url = url_or_id
+        m = re.search(r"/subject/(\d+)", url)
+        subject_id = m.group(1) if m else url
+
+    # 获取页面内容
+    html = fetch_html(url)
+    soup = BeautifulSoup(html, "html.parser")
+
+    # 提取基本信息
+    main_title, desc, cover = extract_basic_info(soup)
+    
+    # 提取评分
+    rating = extract_rating(soup)
+    
+    # 提取详细信息
+    year, episodes, chinese_name = extract_details(soup)
+
+    # 提取其他标题
+    other_titles = extract_other_titles(soup, chinese_name)
+
+    # 提取标签
+    tags = extract_tags(soup)
+
+    # 构建返回数据
+    return {
         "id": subject_id,
         "mainTitle": main_title,
         "otherTitle": other_titles,
@@ -143,7 +237,6 @@ def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
         "status": status,
         "desc": desc,
     }
-    return data
 
 
 def search_subject(keyword: str) -> List[Dict]:
@@ -156,9 +249,11 @@ def search_subject(keyword: str) -> List[Dict]:
         a_main = li.select_one("h3 a.l")
         a_sub = li.select_one("h3 small.grey")
         if a_main:
+            href = a_main.get("href", "")
+            match = re.search(r"/subject/(\d+)", href) if href else None # type: ignore
             results.append(
                 {
-                    "id": re.search(r"/subject/(\d+)", a_main.get("href")).group(1),
+                    "id": match.group(1) if match else "",
                     "title": a_main.get_text(strip=True),
                     "subtitle": a_sub.get_text(strip=True) if a_sub else "",
                 }
@@ -188,7 +283,11 @@ def main() -> bool:
     choices = [f"{r['title']} ({r['subtitle']}) [ID:{r['id']}]" for r in results]
     selected = questionary.select("请选择要导入的作品:", choices=choices).ask()
     # 提取 ID
-    selected_id = re.search(r"ID:(\d+)", selected).group(1)
+    match = re.search(r"ID:(\d+)", selected)
+    if not match:
+        print("未能解析所选作品的ID，退出。")
+        return False
+    selected_id = match.group(1)
 
     # 3. 状态选择
     status = questionary.select(
