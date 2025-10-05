@@ -192,51 +192,55 @@ def parse_subject(url_or_id: str, status: str = "planned") -> Dict:
     Args:
         url_or_id: 主题URL或ID
         status: 观看状态
- 58      
+    
     Returns:
         包含主题信息的字典
     """
     # 解析URL和ID
-    if re.match(r"^\d+$", url_or_id):
-        url = f"https://chii.in/subject/{url_or_id}"
-        subject_id = url_or_id
-    else:
-        url = url_or_id
-        m = re.search(r"/subject/(\d+)", url)
-        subject_id = m.group(1) if m else url
+    if not url_or_id:
+        raise ValueError("url_or_id cannot be empty")
+        
+    try:
+        if re.match(r"^\d+$", url_or_id):
+            url = f"https://chii.in/subject/{url_or_id}"
+            subject_id = url_or_id
+        else:
+            url = url_or_id
+            match = re.search(r"/subject/(\d+)", url)
+            if not match:
+                raise ValueError(f"Invalid URL format: {url}")
+            subject_id = match.group(1)
 
-    # 获取页面内容
-    html = fetch_html(url)
-    soup = BeautifulSoup(html, "html.parser")
+        # 获取页面内容
+        html = fetch_html(url)
+        if not html:
+            raise ValueError(f"Failed to fetch content from {url}")
+            
+        soup = BeautifulSoup(html, "html.parser")
+        
+        # 一次性获取所有需要的元素
+        basic_info = extract_basic_info(soup)
+        rating = extract_rating(soup)
+        details = extract_details(soup)
+        other_titles = extract_other_titles(soup, details[2])  # chinese_name
+        tags = extract_tags(soup)
 
-    # 提取基本信息
-    main_title, desc, cover = extract_basic_info(soup)
-    
-    # 提取评分
-    rating = extract_rating(soup)
-    
-    # 提取详细信息
-    year, episodes, chinese_name = extract_details(soup)
-
-    # 提取其他标题
-    other_titles = extract_other_titles(soup, chinese_name)
-
-    # 提取标签
-    tags = extract_tags(soup)
-
-    # 构建返回数据
-    return {
-        "id": subject_id,
-        "mainTitle": main_title,
-        "otherTitle": other_titles,
-        "year": year or 0,
-        "episodes": episodes or 0,
-        "rating": rating if rating is not None else None,
-        "tags": tags,
-        "cover": cover,
-        "status": status,
-        "desc": desc,
-    }
+        # 构建返回数据
+        return {
+            "id": subject_id,
+            "mainTitle": basic_info[0],
+            "otherTitle": other_titles,
+            "year": details[0] or 0,
+            "episodes": details[1] or 0,
+            "rating": rating,
+            "tags": tags,
+            "cover": basic_info[2],
+            "status": status,
+            "desc": basic_info[1],
+        }
+        
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse subject {url_or_id}: {str(e)}")
 
 
 def search_subject(keyword: str) -> List[Dict]:
